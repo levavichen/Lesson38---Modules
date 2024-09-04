@@ -18,6 +18,8 @@ window.app = {
     onSetFilterBy,
 }
 
+var gUserPos
+
 function onInit() {
     getFilterByFromQueryParams()
     loadAndRenderLocs()
@@ -49,6 +51,10 @@ function renderLocs(locs) {
                 ` | Updated: ${utilService.elapsedTime(loc.updatedAt)}`
                 : ''}
             </p>
+            ${(loc.distance) ?
+                `<p class="distance">
+            Distance: ${loc.distance} KM
+            </p>`: ''}
             <div class="loc-btns">     
                <button title="Delete" onclick="app.onRemoveLoc('${loc.id}')">🗑️</button>
                <button title="Edit" onclick="app.onUpdateLoc('${loc.id}')">✏️</button>
@@ -119,7 +125,16 @@ function onAddLoc(geo) {
 
 function loadAndRenderLocs() {
     locService.query()
-        .then(renderLocs)
+        .then(locs => {
+            if (gUserPos) {
+                locs.forEach(loc => {
+                    const distance = utilService.getDistance(gUserPos, { lat: loc.geo.lat, lng: loc.geo.lng }, 'K')
+                    loc.distance = distance
+                })
+            }
+            renderLocs(locs)
+        })
+
         .catch(err => {
             console.error('OOPs:', err)
             flashMsg('Cannot load locations')
@@ -129,6 +144,7 @@ function loadAndRenderLocs() {
 function onPanToUserPos() {
     mapService.getUserPosition()
         .then(latLng => {
+            gUserPos = latLng
             mapService.panTo({ ...latLng, zoom: 15 })
             unDisplayLoc()
             loadAndRenderLocs()
@@ -181,6 +197,11 @@ function displayLoc(loc) {
     el.querySelector('.loc-address').innerText = loc.geo.address
     el.querySelector('.loc-rate').innerHTML = '★'.repeat(loc.rate)
     el.querySelector('[name=loc-copier]').value = window.location
+
+    if (gUserPos) {
+        const distance = utilService.getDistance(gUserPos, { lat: loc.geo.lat, lng: loc.geo.lng }, 'K')
+        el.querySelector('.loc-distance').innerText = `Distance: ${distance} KM`
+    }
     el.classList.add('show')
 
     utilService.updateQueryParams({ locId: loc.id })
