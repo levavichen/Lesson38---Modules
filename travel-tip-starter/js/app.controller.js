@@ -16,7 +16,10 @@ window.app = {
     onShareLoc,
     onSetSortBy,
     onSetFilterBy,
+    onSubmit,
 }
+
+var gGeo
 
 function onInit() {
     getFilterByFromQueryParams()
@@ -97,14 +100,29 @@ function onSearchAddress(ev) {
 }
 
 function onAddLoc(geo) {
-    const locName = prompt('Loc name', geo.address || 'Just a place')
-    if (!locName) return
+    gGeo = geo
+    const elModal = document.querySelector('.location-form')
+    elModal.showModal()
+
+    // const locName = prompt('Loc name', geo.address || 'Just a place')
+    // if (!locName) return
+
+
+}
+
+function onSubmit(ev) {
+    ev.preventDefault()
+    const elModal = document.querySelector('.location-form')
+
+    const locName = elModal.querySelector('#loc-name').value
+    const locRate = elModal.querySelector('#loc-rate').value
 
     const loc = {
         name: locName,
-        rate: +prompt(`Rate (1-5)`, '3'),
-        geo
+        rate: +locRate,
+        geo: gGeo
     }
+
     locService.save(loc)
         .then((savedLoc) => {
             flashMsg(`Added Location (id: ${savedLoc.id})`)
@@ -115,6 +133,8 @@ function onAddLoc(geo) {
             console.error('OOPs:', err)
             flashMsg('Cannot add location')
         })
+
+        elModal.close()
 }
 
 function loadAndRenderLocs() {
