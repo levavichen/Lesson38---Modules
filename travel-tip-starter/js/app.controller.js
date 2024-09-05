@@ -18,7 +18,6 @@ window.app = {
     onSetFilterBy,
     onSubmit,
     onChangeTheme,
-
 }
 
 var gUserPos
