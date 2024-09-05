@@ -17,6 +17,8 @@ window.app = {
     onSetSortBy,
     onSetFilterBy,
     onSubmit,
+    onChangeTheme,
+
 }
 
 var gUserPos
@@ -373,4 +375,10 @@ function cleanStats(stats) {
         return acc
     }, [])
     return cleanedStats
+}
+
+function onChangeTheme() {
+    const elBody = document.querySelector('body')
+    
+    elBody.classList.toggle('dark')
 }
