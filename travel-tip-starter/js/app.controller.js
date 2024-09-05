@@ -102,39 +102,56 @@ function onSearchAddress(ev) {
 function onAddLoc(geo) {
     gGeo = geo
     const elModal = document.querySelector('.location-form')
+    elModal.dataset.locId = ''
     elModal.showModal()
-
-    // const locName = prompt('Loc name', geo.address || 'Just a place')
-    // if (!locName) return
-
-
 }
 
 function onSubmit(ev) {
     ev.preventDefault()
     const elModal = document.querySelector('.location-form')
-
     const locName = elModal.querySelector('#loc-name').value
     const locRate = elModal.querySelector('#loc-rate').value
+    const locId = elModal.dataset.locId
 
-    const loc = {
-        name: locName,
-        rate: +locRate,
-        geo: gGeo
+    if (!locId) {
+        const loc = {
+            name: locName,
+            rate: +locRate,
+            geo: gGeo
+        }
+
+        locService.save(loc)
+            .then((savedLoc) => {
+                flashMsg(`Added Location (id: ${savedLoc.id})`)
+                utilService.updateQueryParams({ locId: savedLoc.id })
+                loadAndRenderLocs()
+            })
+            .catch(err => {
+                console.error('OOPs:', err)
+                flashMsg('Cannot add location')
+            })
+
+    } else {
+
+        locService.getById(locId)
+            .then(loc => {
+                const rate = locRate
+                if (rate && rate !== loc.rate) {
+                    loc.rate = rate
+                    loc.name = locName
+                    locService.save(loc)
+                        .then(savedLoc => {
+                            flashMsg(`Rate was set to: ${savedLoc.rate}`)
+                            loadAndRenderLocs()
+                        })
+                        .catch(err => {
+                            console.error('OOPs:', err)
+                            flashMsg('Cannot update location')
+                        })
+                }
+            })
     }
-
-    locService.save(loc)
-        .then((savedLoc) => {
-            flashMsg(`Added Location (id: ${savedLoc.id})`)
-            utilService.updateQueryParams({ locId: savedLoc.id })
-            loadAndRenderLocs()
-        })
-        .catch(err => {
-            console.error('OOPs:', err)
-            flashMsg('Cannot add location')
-        })
-
-        elModal.close()
+    elModal.close()
 }
 
 function loadAndRenderLocs() {
@@ -161,23 +178,24 @@ function onPanToUserPos() {
 }
 
 function onUpdateLoc(locId) {
+
     locService.getById(locId)
         .then(loc => {
-            const rate = prompt('New rate?', loc.rate)
-            if (rate && rate !== loc.rate) {
-                loc.rate = rate
-                locService.save(loc)
-                    .then(savedLoc => {
-                        flashMsg(`Rate was set to: ${savedLoc.rate}`)
-                        loadAndRenderLocs()
-                    })
-                    .catch(err => {
-                        console.error('OOPs:', err)
-                        flashMsg('Cannot update location')
-                    })
+            const elModal = document.querySelector('.location-form')
 
-            }
+            elModal.querySelector('#loc-name').value = loc.name
+            elModal.querySelector('#loc-rate').value = loc.rate
+
+            elModal.dataset.locId = locId
+
+            elModal.showModal()
         })
+
+        .catch(err => {
+            console.error('OOPs:', err)
+            flashMsg('Cannot update location')
+        })
+
 }
 
 function onSelectLoc(locId) {
